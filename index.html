@@ -257,8 +257,8 @@
     transform-origin:0% 0%; pointer-events:none;
   }
   .wheel-label span{
-    display:block; margin-left:16px; margin-top:-8px; max-width:92px;
-    font-size:.66rem; font-weight:700; color:#fff; line-height:1.15;
+    display:block; margin-left:14px; margin-top:-7px; max-width:76px;
+    font-size:.58rem; font-weight:700; color:#fff; line-height:1.1;
     text-shadow:0 1px 2px rgba(0,0,0,.35);
   }
   .wheel-center{
@@ -328,9 +328,14 @@
     { key:"Tarjeta3", label:"Tarjeta de regalo Q200", color:"#d8bc97" }
   ];
   const SIN_PREMIO_KEY = "SIN_PREMIO";
-  const WHEEL_SEGMENTS = PRIZES.concat([
-    { key:SIN_PREMIO_KEY, label:"¡Gracias por participar!", color:"#e0e8eb" }
-  ]);
+  /* La rueda alterna un segmento "Gracias por participar" antes de cada
+     premio (en vez de tener uno solo), para que visualmente no parezca
+     que casi siempre toca premio. Esto es solo estético: el resultado
+     real lo sigue decidiendo el flujo de Power Automate; aquí solo se
+     elige, al azar, en cuál de los segmentos "Gracias" se detiene la
+     rueda cuando el resultado es "sin premio" (ver rotationForResult). */
+  const GRACIAS_SEGMENT = { key:SIN_PREMIO_KEY, label:"¡Gracias por participar!", color:"#e0e8eb" };
+  const WHEEL_SEGMENTS = PRIZES.reduce((acc, prize) => acc.concat([GRACIAS_SEGMENT, prize]), []);
   /* ============================================================ */
 
   const ZONES = [
@@ -616,8 +621,14 @@
   function rotationForResult(resultKey){
     const n = WHEEL_SEGMENTS.length;
     const step = 360 / n;
-    let segIndex = WHEEL_SEGMENTS.findIndex(s => s.key === resultKey);
-    if (segIndex < 0) segIndex = n - 1; // por seguridad, cae en "sin premio"
+    // Puede haber varios segmentos con la misma key (varios "Gracias por
+    // participar"); se elige uno al azar entre los que coincidan, solo
+    // para variar visualmente en cuál se detiene la rueda.
+    const matches = [];
+    WHEEL_SEGMENTS.forEach((s, i) => { if (s.key === resultKey) matches.push(i); });
+    let segIndex = matches.length
+      ? matches[Math.floor(Math.random() * matches.length)]
+      : n - 1; // por seguridad, cae en el último segmento
     const segCenter = step * segIndex + step/2;
     const extraSpins = 5; // vueltas completas antes de detenerse, para el efecto visual
     // El conic-gradient empieza en la parte superior (0°) y crece en sentido
