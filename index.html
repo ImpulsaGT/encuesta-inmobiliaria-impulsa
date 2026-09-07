@@ -257,9 +257,8 @@
     transform-origin:0% 0%; pointer-events:none;
   }
   .wheel-label span{
-    display:block; margin-left:14px; margin-top:-7px; max-width:76px;
-    font-size:.58rem; font-weight:700; color:#fff; line-height:1.1;
-    text-shadow:0 1px 2px rgba(0,0,0,.35);
+    display:block; margin-left:30px; margin-top:-6px; white-space:nowrap;
+    font-size:.6rem; font-weight:700; line-height:1.1;
   }
   .wheel-center{
     position:absolute; top:50%; left:50%; width:46px; height:46px; margin:-23px 0 0 -23px;
@@ -319,13 +318,19 @@
      lista de SharePoint "Inventario Premios Ruleta". "label" es lo que
      ve la persona que responde. Para cambiar textos o montos, solo edite
      "label" aquí; no hace falta tocar SharePoint ni Power Automate. */
+  /* "short" es el texto que se ve DENTRO de la rueda (debe ser corto, en
+     una sola línea, para que no se encime con las casillas vecinas).
+     "text" es el color de letra elegido según el contraste contra el
+     color de fondo de esa casilla (blanco para las 3 más oscuras,
+     tinta oscura para las más claras). "label" (el texto completo) se
+     sigue usando en la pantalla de "ganaste" y en el panel admin. */
   const PRIZES = [
-    { key:"Descuento1", label:"Descuento de Q5,000", color:"#244b5c" },
-    { key:"Descuento2", label:"Descuento de Q10,000", color:"#31667d" },
-    { key:"Descuento3", label:"Descuento de Q15,000", color:"#7e5c2f" },
-    { key:"Tarjeta1", label:"Tarjeta de regalo Q100", color:"#ba8847" },
-    { key:"Tarjeta2", label:"Tarjeta de regalo Q150", color:"#c09358" },
-    { key:"Tarjeta3", label:"Tarjeta de regalo Q200", color:"#d8bc97" }
+    { key:"Descuento1", label:"Descuento de Q5,000", short:"Desc. Q5,000", color:"#244b5c", text:"#fff" },
+    { key:"Descuento2", label:"Descuento de Q10,000", short:"Desc. Q10,000", color:"#31667d", text:"#fff" },
+    { key:"Descuento3", label:"Descuento de Q15,000", short:"Desc. Q15,000", color:"#7e5c2f", text:"#fff" },
+    { key:"Tarjeta1", label:"Tarjeta de regalo Q100", short:"Tarjeta Q100", color:"#ba8847", text:"var(--ink)" },
+    { key:"Tarjeta2", label:"Tarjeta de regalo Q150", short:"Tarjeta Q150", color:"#c09358", text:"var(--ink)" },
+    { key:"Tarjeta3", label:"Tarjeta de regalo Q200", short:"Tarjeta Q200", color:"#d8bc97", text:"var(--ink)" }
   ];
   const SIN_PREMIO_KEY = "SIN_PREMIO";
   /* La rueda alterna un segmento "Gracias por participar" antes de cada
@@ -334,7 +339,7 @@
      real lo sigue decidiendo el flujo de Power Automate; aquí solo se
      elige, al azar, en cuál de los segmentos "Gracias" se detiene la
      rueda cuando el resultado es "sin premio" (ver rotationForResult). */
-  const GRACIAS_SEGMENT = { key:SIN_PREMIO_KEY, label:"¡Gracias por participar!", color:"#e0e8eb" };
+  const GRACIAS_SEGMENT = { key:SIN_PREMIO_KEY, label:"¡Gracias por participar!", short:"¡Gracias!", color:"#e0e8eb", text:"var(--ink)" };
   const WHEEL_SEGMENTS = PRIZES.reduce((acc, prize) => acc.concat([GRACIAS_SEGMENT, prize]), []);
   /* ============================================================ */
 
@@ -612,7 +617,11 @@
     return WHEEL_SEGMENTS.map((seg, i) => {
       const segCenter = step * i + step/2;
       const angle = segCenter - 90;
-      return `<div class="wheel-label" style="transform:rotate(${angle}deg);"><span>${esc(seg.label)}</span></div>`;
+      const txt = seg.text || "#fff";
+      const shadow = txt === "#fff"
+        ? "text-shadow:0 1px 2px rgba(0,0,0,.35);"
+        : "text-shadow:0 1px 1px rgba(255,255,255,.55);";
+      return `<div class="wheel-label" style="transform:rotate(${angle}deg);"><span style="color:${txt};${shadow}">${esc(seg.short || seg.label)}</span></div>`;
     }).join("");
   }
 
