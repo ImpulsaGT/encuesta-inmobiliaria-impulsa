@@ -1,0 +1,975 @@
+<title>Encuesta Decisión de Compra</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&display=swap');
+
+  :root{
+    /* Colores extraídos directamente del logo oficial de IMPULSA */
+    --teal-950:#0e1e25;
+    --teal-900:#244b5c;
+    --teal-800:#224858;
+    --teal-700:#31667d;
+    --teal-100:#e0e8eb;
+    --gold-700:#7e5c2f;
+    --gold-600:#ba8847;
+    --gold-500:#c09358;
+    --gold-300:#d8bc97;
+    --gold-100:#eee7dd;
+    --cream-50:#faf6ee;
+    --cream-100:#f3ecdd;
+    --card:#ffffff;
+    --ink:#1c2624;
+    --ink-soft:#5b6664;
+    --border:#e3dcc9;
+    --danger:#a3432f;
+    --focus:#ba8847;
+    --shadow: 0 20px 50px -20px rgba(14,30,37,0.35);
+    --brand-ink:var(--teal-900);
+    --eyebrow-ink:var(--gold-700);
+    --chip-ink:var(--teal-900);
+    --opt-selected-bg:var(--gold-100);
+  }
+
+  /* Diseño de un solo tema: la encuesta siempre usa fondo claro,
+     sin importar si el dispositivo de quien responde está en modo oscuro. */
+
+  *{box-sizing:border-box;}
+  body{
+    background:var(--cream-50);
+    color:var(--ink);
+    font-family:'Inter',system-ui,-apple-system,sans-serif;
+    min-height:100vh;
+    display:flex;
+    justify-content:center;
+    -webkit-font-smoothing:antialiased;
+  }
+  h1,h2,h3,.display{
+    font-family:'Fraunces',Georgia,'Times New Roman',serif;
+    letter-spacing:-0.01em;
+    text-wrap:balance;
+  }
+
+  .bg-plan{
+    position:fixed; inset:0; z-index:0; pointer-events:none;
+    opacity:0.55;
+  }
+
+  #app{
+    position:relative; z-index:1;
+    width:100%;
+    max-width:720px;
+    padding:28px 20px 40px;
+    display:flex;
+    flex-direction:column;
+    min-height:100vh;
+  }
+
+  .brand{
+    display:flex; align-items:center; justify-content:space-between;
+    margin-bottom:22px;
+  }
+  .brand-mark{
+    display:flex; align-items:center; gap:10px;
+  }
+  .brand-mark .mark-icon{
+    height:22px; width:auto; display:block;
+  }
+  .brand-mark .word{
+    font-family:'Inter',sans-serif;
+    font-weight:600;
+    font-size:1.05rem;
+    color:var(--brand-ink);
+    letter-spacing:0.2em;
+    text-transform:uppercase;
+  }
+  .brand-tag{
+    font-size:.72rem; color:var(--ink-soft); letter-spacing:.08em; text-transform:uppercase;
+  }
+
+  .progress-wrap{
+    margin-bottom:8px;
+  }
+  .progress-track{
+    height:4px; border-radius:4px; background:var(--teal-100); overflow:hidden;
+  }
+  .progress-fill{
+    height:100%; background:linear-gradient(90deg,var(--gold-700),var(--gold-500));
+    border-radius:4px;
+    transition:width .45s cubic-bezier(.65,0,.35,1);
+  }
+  .progress-label{
+    display:flex; justify-content:space-between;
+    font-size:.75rem; color:var(--ink-soft); margin-top:6px;
+    font-variant-numeric:tabular-nums;
+  }
+
+  .stage{
+    flex:1;
+    display:flex;
+    flex-direction:column;
+    justify-content:center;
+  }
+
+  .card{
+    background:var(--card);
+    border:1px solid var(--border);
+    border-radius:20px;
+    padding:34px 30px;
+    box-shadow:var(--shadow);
+    animation:rise .38s cubic-bezier(.2,.8,.2,1);
+  }
+  @media (max-width:520px){
+    .card{ padding:26px 20px; border-radius:16px; }
+  }
+  @keyframes rise{
+    from{ opacity:0; transform:translateY(10px); }
+    to{ opacity:1; transform:translateY(0); }
+  }
+  @media (prefers-reduced-motion: reduce){
+    .card{ animation:none; }
+  }
+
+  .eyebrow{
+    font-size:.72rem; letter-spacing:.09em; text-transform:uppercase;
+    color:var(--eyebrow-ink); font-weight:600; margin-bottom:10px;
+  }
+
+  .q-title{
+    font-size:1.5rem; font-weight:600; line-height:1.28; margin:0 0 6px;
+    color:var(--ink);
+  }
+  .q-sub{
+    font-size:.92rem; color:var(--ink-soft); margin:0 0 20px;
+  }
+
+  .intro-title{ font-size:2rem; font-weight:600; margin:0 0 14px; color:var(--brand-ink);}
+  .intro-body{ color:var(--ink-soft); line-height:1.65; font-size:1rem; margin:0 0 10px;}
+  .intro-meta{
+    display:flex; gap:18px; margin-top:22px; flex-wrap:wrap;
+  }
+  .meta-chip{
+    display:flex; align-items:center; gap:8px;
+    font-size:.82rem; color:var(--chip-ink);
+    background:var(--teal-100); border-radius:999px; padding:7px 14px;
+  }
+
+  .options{ display:flex; flex-direction:column; gap:10px; }
+  .opt{
+    display:flex; align-items:center; gap:12px;
+    border:1.5px solid var(--border); border-radius:12px;
+    padding:13px 16px; cursor:pointer; background:transparent;
+    font:inherit; text-align:left; color:var(--ink);
+    transition:border-color .15s ease, background .15s ease, transform .1s ease;
+    width:100%;
+  }
+  .opt:hover{ border-color:var(--gold-500); }
+  .opt:active{ transform:scale(.995); }
+  .opt.selected{
+    border-color:var(--gold-600);
+    background:var(--opt-selected-bg);
+  }
+  .opt .mark{
+    width:20px; height:20px; border-radius:50%; border:1.5px solid var(--border);
+    flex:0 0 auto; display:flex; align-items:center; justify-content:center;
+  }
+  .opt.selected .mark{ border-color:var(--gold-600); background:var(--gold-600); }
+  .opt.selected .mark::after{ content:''; width:8px; height:8px; border-radius:50%; background:#fff; }
+  .opt.multi .mark{ border-radius:6px; }
+  .opt-label{ font-size:.98rem; }
+
+  .helper{ font-size:.8rem; color:var(--ink-soft); margin-top:12px; }
+  .helper.warn{ color:var(--gold-700); }
+
+  .search-wrap{ position:relative; }
+  .search-input{
+    width:100%; padding:13px 16px; border:1.5px solid var(--border); border-radius:12px;
+    font:inherit; font-size:.98rem; background:var(--card); color:var(--ink);
+  }
+  .search-input:focus{ outline:2px solid var(--focus); outline-offset:1px; }
+  .search-list{
+    margin-top:10px; max-height:260px; overflow-y:auto;
+    border:1px solid var(--border); border-radius:12px;
+    display:flex; flex-direction:column;
+  }
+  .search-item{
+    padding:11px 16px; cursor:pointer; font-size:.94rem; background:transparent; border:none;
+    text-align:left; color:var(--ink); border-bottom:1px solid var(--border);
+    font-family:inherit;
+  }
+  .search-item:last-child{ border-bottom:none; }
+  .search-item:hover{ background:var(--teal-100); }
+  .search-item.active{ background:var(--opt-selected-bg); color:var(--gold-600); font-weight:600; }
+  .chips{ display:flex; flex-wrap:wrap; gap:8px; margin-bottom:14px; }
+  .chip{
+    display:flex; align-items:center; gap:6px;
+    background:var(--teal-900); color:#fff; border-radius:999px;
+    padding:6px 8px 6px 14px; font-size:.82rem;
+  }
+  .chip button{
+    background:rgba(255,255,255,.18); border:none; color:#fff; width:18px; height:18px;
+    border-radius:50%; cursor:pointer; font-size:.75rem; line-height:1;
+  }
+
+  textarea.text-input{
+    width:100%; min-height:130px; padding:14px 16px; border:1.5px solid var(--border);
+    border-radius:12px; font:inherit; font-size:.98rem; resize:vertical;
+    background:var(--card); color:var(--ink);
+  }
+  textarea.text-input:focus{ outline:2px solid var(--focus); outline-offset:1px; }
+
+  .likert-table{ display:flex; flex-direction:column; gap:14px; }
+  .likert-row{ border-bottom:1px solid var(--border); padding-bottom:14px; }
+  .likert-row:last-child{ border-bottom:none; padding-bottom:0; }
+  .likert-item{ font-size:.92rem; font-weight:600; margin-bottom:9px; color:var(--ink); }
+  .likert-scale{ display:grid; grid-template-columns:repeat(4,1fr); gap:8px; }
+  @media (max-width:480px){ .likert-scale{ grid-template-columns:repeat(2,1fr); } }
+  .likert-opt{
+    border:1.5px solid var(--border); border-radius:10px; padding:9px 6px;
+    font-size:.78rem; text-align:center; cursor:pointer; background:transparent; color:var(--ink-soft);
+    transition:border-color .15s, background .15s, color .15s;
+  }
+  .likert-opt.selected{ border-color:var(--gold-600); background:var(--gold-600); color:#fff; font-weight:600; }
+  .likert-legend{ display:flex; justify-content:space-between; font-size:.72rem; color:var(--ink-soft); margin-bottom:16px; }
+
+  .nav-row{
+    display:flex; justify-content:space-between; align-items:center; margin-top:26px; gap:12px;
+  }
+  .btn{
+    font:inherit; font-weight:600; font-size:.94rem; border-radius:999px; cursor:pointer;
+    padding:13px 26px; border:1.5px solid transparent; transition:opacity .15s, transform .1s;
+  }
+  .btn:active{ transform:scale(.98); }
+  .btn-primary{ background:var(--teal-900); color:#fbf6e9; }
+  .btn-primary.gold{ background:var(--gold-600); }
+  .btn-primary:disabled, .btn-primary.gold:disabled{ background:var(--border); color:var(--ink-soft); cursor:not-allowed; }
+  .btn-ghost{ background:transparent; color:var(--ink-soft); border-color:var(--border); }
+  .btn-ghost:disabled{ opacity:.4; cursor:not-allowed; }
+
+  .done-wrap{ text-align:center; padding:20px 6px; }
+  .done-icon{
+    width:64px; height:64px; border-radius:50%; background:var(--gold-100);
+    display:flex; align-items:center; justify-content:center; margin:0 auto 18px;
+  }
+
+  .field-label{ display:block; font-size:.8rem; font-weight:600; color:var(--ink); margin-bottom:6px; }
+  .field-input{
+    width:100%; padding:13px 16px; border:1.5px solid var(--border); border-radius:12px;
+    font:inherit; font-size:.98rem; background:var(--card); color:var(--ink);
+  }
+  .field-input:focus{ outline:2px solid var(--focus); outline-offset:1px; }
+  .field-group + .field-group{ margin-top:14px; }
+
+  .wheel-stage{ text-align:center; padding:6px 0 4px; }
+  .wheel-wrap{ position:relative; width:260px; height:260px; margin:6px auto 22px; }
+  .wheel-pointer{
+    position:absolute; top:-6px; left:50%; transform:translateX(-50%); z-index:3;
+    width:0; height:0; border-left:13px solid transparent; border-right:13px solid transparent;
+    border-top:22px solid var(--danger); filter:drop-shadow(0 2px 2px rgba(0,0,0,.25));
+  }
+  .wheel{
+    width:100%; height:100%; border-radius:50%; position:relative;
+    border:7px solid var(--card); box-shadow:var(--shadow);
+    transition: transform 4.2s cubic-bezier(.15,.6,.1,1);
+  }
+  .wheel-label{
+    position:absolute; top:50%; left:50%; width:50%; height:0;
+    transform-origin:0% 0%; pointer-events:none;
+  }
+  .wheel-label span{
+    display:block; margin-left:30px; margin-top:-6px; white-space:nowrap;
+    font-size:.6rem; font-weight:700; line-height:1.1;
+  }
+  .wheel-center{
+    position:absolute; top:50%; left:50%; width:46px; height:46px; margin:-23px 0 0 -23px;
+    border-radius:50%; background:var(--gold-600); box-shadow:0 2px 10px rgba(0,0,0,.3); z-index:2;
+    display:flex; align-items:center; justify-content:center; font-size:1.3rem;
+  }
+  .wheel-result{
+    margin-top:4px; padding:16px; border-radius:14px; background:var(--teal-100);
+    text-align:center;
+  }
+  .wheel-result .prize-name{ font-family:'Fraunces',serif; font-size:1.25rem; font-weight:600; color:var(--brand-ink); margin:4px 0 2px; }
+  .wheel-result.no-prize{ background:var(--cream-100); }
+
+  .admin-panel{ max-width:720px; margin:0 auto; padding:20px; font-family:'Inter',sans-serif; }
+  .admin-panel table{ width:100%; border-collapse:collapse; font-size:.8rem; }
+  .admin-panel th,.admin-panel td{ border:1px solid var(--border); padding:6px 8px; text-align:left; }
+
+  .sr-only{ position:absolute; width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0); }
+
+  ::selection{ background:var(--gold-300); }
+</style>
+
+<svg class="bg-plan" preserveAspectRatio="none" viewBox="0 0 800 800" aria-hidden="true">
+  <defs>
+    <pattern id="grid" width="80" height="80" patternUnits="userSpaceOnUse">
+      <path d="M 80 0 L 0 0 0 80" fill="none" stroke="var(--teal-900)" stroke-width="0.5" opacity="0.06"/>
+    </pattern>
+  </defs>
+  <rect width="800" height="800" fill="url(#grid)"/>
+</svg>
+
+<div id="app"></div>
+
+<script>
+(function(){
+  "use strict";
+
+  // Ícono de chevrones dorados recortado directamente del logo oficial de IMPULSA.
+  const LOGO_ICON = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEsAAABICAYAAAC+2ghEAAADqElEQVR4nN2au3UaQQBFLz7KRQded7AdWA44ENKBKUEZKc4gowOjDlDGgcDQgdWB6ECqYB3MCuvDZ2fmzWf1ziET7HA1c5l9O1RVRW6v9bRfph7DsVenqipyyWY2GAEj4DvwDMyBeW+8eko2qFdJDmszG3QxgG6Bryf+7A6Y9MarxyiDOpFksDazQYEBNAKuG75th4G2DTKoC4kOazMb3GAA/fT4mD0G2kIwpMaJBuudj1SJ6rWgsBr6SJXgXgsCy9FHqgTzmhSWyEeqyL0mgRXIR6rIvOYMK6CPnoEFMBR/Lnh6zRpWQB/tMTNg8TID6mU9QT9jnbzWGFZAH+0wgBZnrl1goKmvbeW1i7AC+ugOA2nb9A310r+tX8pZ3chrR2FF8NHcdz9U/xMnRPTaG1gxfaRKTK91qqpK6iNVYnits572b4A/4gtY+0iVgF7bKWHJfKSK2Gu7K8GHSH1Uf8Eh8BfPXXe9/Bcqr/nMLJmPLvz6ytoET685LUOZjyx/fWVtgqPXGsOS+sjz11faJlh47SKsED4aodkTSVvSBl47CSuWj1SJ4bUPsFL5SJWQXtt11tN+iflCOfhIlRBeK2W1cqZtqdRrXrAiP73xjbfXnGDFaCeAkoxaUrCElaKdyKUlhYawcmhLU7ekcAZWzm1pipYUjsBqU1sa++nPAVab29JYXuusp/0CsyySP73xTWCvTdS1ssJHXUz5t/XZEwXwmqxW9vZRvZRGvJ0V9xjwW9eBCb3mDcvbR5vZoMQAOuebBww0n+sU+HnNGZa3jzazwRADyeY/vuf/Mn9yvG4XN69ZwVL6aIKfS56BJZ73epZeawQrlI9UieW1s7Bi+UiV0F47CiuVj1QJ5bUDrCX5+EgVtdceO+tpvwuQqY9UUXit8DlTWhLPR6p4ec3lTOmQdD5SxclrTcu/Lnn5SBUrr52F1RIfqXLRa6fOlJa0z0eqnPTa+zOlQ9rvI1U+eO1l6zDk8/lIlYPXrjDP536nHE3mucboqPiSeiRtSq6wHlIP4Fhyg3UP/OiNVyXwDfiFcUYWCXUO3iZnN4YZbYil5+BtY33LkXhrIzkHbxvnm9neeLUElqk2zTFnlndN8j6Rb8eCL0NJAXcpkbwWDJZ3teuagF6TO8v7oYFvQnpNNbPkPlJF6DWvZRjFR6oIvOYEK5mPVHH0mpWzkvtIFVevNZlZ2fpIlYZeO7kMW+UjVS547QOs1vtIlSNeO8Ca80l8pM4rrxX/AKT4EkcfQAE8AAAAAElFTkSuQmCC";
+
+  /* ================= CONFIGURACIÓN DE ENVÍO =================
+     Pega aquí la URL del flujo de Power Automate ("Cuando se recibe
+     una solicitud HTTP") u otro webhook que reciba JSON por POST.
+     Mientras esté vacío, cada respuesta se respalda solo en el
+     navegador del encuestado (localStorage) y no llega a IMPULSA. */
+  const CONFIG = {
+    SUBMIT_URL: "https://default80073be98bbd440cba9b0757a3dbc9.c3.environment.api.powerplatform.com:443/powerautomate/automations/direct/cu/02/workflows/d26f97061f3a4ddaba82747683b2811e/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=U9qa5h6xtLLW0oRq-Wg6KoEMZ9nj-Pm1KZef-SzdYgM",
+    /* URL del flujo "Ruleta - Girar (Decisión de Compra)" (recibe nombre/correo, devuelve el premio). */
+    RULETA_URL: "https://default80073be98bbd440cba9b0757a3dbc9.c3.environment.api.powerplatform.com:443/powerautomate/automations/direct/cu/27/workflows/3ec8df5d72f143ccaf7ccd4e62d388ad/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=9LyHV0bMe_yKwR4XC-vtmBI6GvuDVj3NgRMhT1Iw9VE",
+    /* URL del flujo "Ruleta - Guardar Teléfono (Decisión de Compra)" (recibe id del ganador + teléfono). */
+    TELEFONO_URL: "https://default80073be98bbd440cba9b0757a3dbc9.c3.environment.api.powerplatform.com:443/powerautomate/automations/direct/cu/03/workflows/45afdd9c01a949358a0b3eb9ffbcf0a1/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=hDgF7clxMf32rIilS5SLnyVY3mrNHP84oJ396gMZHMQ"
+  };
+  /* ============================================================ */
+
+  /* ================= PREMIOS DE LA RULETA =================
+     "key" debe coincidir EXACTAMENTE con el Título de cada ficha en la
+     lista de SharePoint "Inventario Premios Ruleta - Decisión de Compra".
+     "label" es lo que ve la persona que responde. */
+  const PRIZES = [
+    { key:"Descuento1", label:"Descuento de Q5,000", short:"Desc. Q5,000", color:"#244b5c", text:"#fff" },
+    { key:"Descuento2", label:"Descuento de Q10,000", short:"Desc. Q10,000", color:"#31667d", text:"#fff" },
+    { key:"Descuento3", label:"Descuento de Q15,000", short:"Desc. Q15,000", color:"#7e5c2f", text:"#fff" },
+    { key:"Tarjeta1", label:"Tarjeta de regalo Q100", short:"Tarjeta Q100", color:"#ba8847", text:"var(--ink)" },
+    { key:"Tarjeta2", label:"Tarjeta de regalo Q150", short:"Tarjeta Q150", color:"#c09358", text:"var(--ink)" },
+    { key:"Tarjeta3", label:"Tarjeta de regalo Q200", short:"Tarjeta Q200", color:"#d8bc97", text:"var(--ink)" }
+  ];
+  const SIN_PREMIO_KEY = "SIN_PREMIO";
+  const GRACIAS_SEGMENT = { key:SIN_PREMIO_KEY, label:"¡Gracias por participar!", short:"¡Gracias!", color:"#e0e8eb", text:"var(--ink)" };
+  const WHEEL_SEGMENTS = PRIZES.reduce((acc, prize) => acc.concat([GRACIAS_SEGMENT, prize]), []);
+  /* ============================================================ */
+
+  const ZONES = [
+    "Zona 1","Zona 2","Zona 3","Zona 4","Zona 5","Zona 6","Zona 7","Zona 8",
+    "Zona 9","Zona 10","Zona 11","Zona 12","Zona 13","Zona 14","Zona 15",
+    "Zona 16","Zona 17","Zona 18","Mixco","Santa Catarina Pinula",
+    "San José Pinula","Fraijanes","San Miguel Petapa","Villa Nueva","Otras"
+  ];
+
+  const LIKERT_ITEMS = [
+    ["ubicacion","Ubicación"],["precio","Precio"],
+    ["financiamiento","Plan de financiamiento"],["diseno","Diseño del apartamento"],
+    ["acabados","Acabados del apartamento"],["amenidades","Amenidades del edificio"],
+    ["asesor","Atención del asesor de ventas"],["respaldo","Respaldo de la empresa"],
+    ["potencial","Potencial de la inversión"],["exclusividad","Sensación de exclusividad"]
+  ];
+  const ATTR_SCALE = ["Muy atractivo","Atractivo","Poco atractivo","Nada atractivo"];
+  const IMPORT_SCALE = ["Muy importante","Importante","Poco importante","Nada importante"];
+
+  const COMMON = [
+    { id:"edad", n:1, type:"single", title:"¿En cuál de los siguientes rangos de edad se encuentra?",
+      options:["18 - 24 años","25 - 34 años","35 - 44 años","45 - 54 años","55 - 64 años","65 o más años"] },
+    { id:"convivencia", n:2, type:"single", title:"¿Con quiénes vive actualmente?",
+      options:["Vivo solo","Vivo con mi pareja, sin hijos","Vivo con mi pareja e hijos","Vivo con mis hijos, sin pareja",
+        "Vivo con mis padres y/o demás familiares","Vivo con amigos y/o roommates","Otros"] },
+    { id:"tipo_vivienda", n:3, type:"single", title:"¿En qué tipo de vivienda reside actualmente?",
+      options:["Apartamento propio","Apartamento alquilado","Casa propia","Casa alquilada","Otros"] },
+    { id:"zona_actual", n:4, type:"select", title:"¿En qué zona de la ciudad o municipio reside actualmente?",
+      options: ZONES },
+    { id:"cuota_max", n:5, type:"single", title:"¿Cuál es la cuota mensual máxima que estaría dispuesto a pagar por la compra de un apartamento?",
+      options:["Q3,999 o menos","Q4,000 - Q5,999","Q6,000 - Q7,999","Q8,000 - Q9,999","Q10,000 - Q11,999",
+        "Q12,000 - Q13,999","Q14,000 - Q15,999","Q16,000 o más"] },
+    { id:"razon_busqueda", n:6, type:"single", title:"¿Cuál fue la razón principal por la que buscaba un apartamento?",
+      options:["Vivienda propia","Inversión","Segunda vivienda","Acercarse a su trabajo y/o actividades diarias"] },
+    { id:"zonas_buscadas", n:7, type:"multi", max:3, title:"¿En qué zonas buscó apartamento?",
+      sub:"Selecciona máximo 3 opciones.", options: ZONES },
+    { id:"compro", n:8, type:"single", title:"Tras la búsqueda de proyectos, ¿compró algún apartamento?",
+      options:["Sí","No"] }
+  ];
+
+  const BRANCH_YES = [
+    { id:"proyecto_impulsa", n:9, type:"single", title:"¿El apartamento que compró corresponde a un proyecto desarrollado por IMPULSA?",
+      options:["Sí","No"] },
+    { id:"proyecto_comprado", n:10, type:"text", title:"¿En qué proyecto compró su apartamento?" },
+    { id:"calif_atractivo_comprado", n:11, type:"likert", scale:ATTR_SCALE,
+      title:"¿Cómo calificaría los siguientes aspectos del proyecto donde compró su apartamento?" },
+    { id:"calif_importancia_comprado", n:12, type:"likert", scale:IMPORT_SCALE,
+      title:"Pensando en el proyecto donde compró su apartamento, ¿qué tan importantes fueron los siguientes aspectos para tomar su decisión?" },
+    { id:"satisfaccion", n:13, type:"single", title:"¿Qué tan satisfecho se siente con la compra del apartamento?",
+      options:["Muy satisfecho","Satisfecho","Poco satisfecho","Nada satisfecho"] },
+    { id:"razon_decision_comprado", n:14, type:"text", title:"¿Cuál fue la razón principal por la que tomó su decisión?" },
+    { id:"recomendacion_comprado", n:15, type:"text", title:"¿Qué recomendaría para mejorar la experiencia de compra de un apartamento?" }
+  ];
+
+  const BRANCH_NO = [
+    { id:"alternativas", n:9, type:"text", title:"¿Qué proyectos consideró como alternativas antes de tomar su decisión?" },
+    { id:"calif_atractivo_visitado", n:10, type:"likert", scale:ATTR_SCALE,
+      title:"¿Cómo calificaría los siguientes aspectos del proyecto que visitó?" },
+    { id:"calif_importancia_visitado", n:11, type:"likert", scale:IMPORT_SCALE,
+      title:"Pensando en el proyecto que visitó, ¿qué tan importantes fueron los siguientes aspectos para tomar su decisión?" },
+    { id:"razon_decision_visitado", n:12, type:"text", title:"¿Cuál fue la razón principal por la que tomó su decisión?" },
+    { id:"motivacion_faltante", n:13, type:"text", title:"¿Qué le hubiera motivado a comprar un apartamento?" },
+    { id:"considera_futuro", n:14, type:"single", title:"¿Considera comprar un apartamento en el futuro?",
+      options:["Sí","No"] },
+    { id:"recomendacion_visitado", n:15, type:"text", title:"¿Qué recomendaría para mejorar la experiencia de compra de un apartamento?" }
+  ];
+
+  const TOTAL_QUESTIONS = COMMON.length + BRANCH_YES.length; // 15, same either branch
+
+  let answers = {};
+  let idx = 0; // 0 = intro, 1..8 = COMMON, 9..15 = branch, 16 = ganador, 17 = ruleta, 18 = done
+  let surveySubmitted = false;
+  const NON_QUESTION_TYPES = ["intro","done","ganador","ruleta"];
+
+  // Estado de los datos de contacto y de la ruleta (no forman parte de las
+  // respuestas de la encuesta; se envían a un flujo/lista separados).
+  let gState = {
+    nombre: "",
+    correo: "",
+    phase: "listo",       // listo | girando | resultado
+    result: null,         // key del premio devuelto por el flujo, o SIN_PREMIO_KEY
+    ganadorId: null,      // Id del elemento creado en "Ganadores Ruleta - Decisión de Compra"
+    rotation: 0,
+    telefonoGuardado: false
+  };
+
+  function getFlow(){
+    const flow = [{ type:"intro" }, ...COMMON];
+    if (answers.compro === "Sí") flow.push(...BRANCH_YES);
+    else if (answers.compro === "No") flow.push(...BRANCH_NO);
+    flow.push({ type:"ganador" }, { type:"ruleta" }, { type:"done" });
+    return flow;
+  }
+
+  function currentStep(){ return getFlow()[idx]; }
+
+  function isAnswered(step){
+    if (!step || NON_QUESTION_TYPES.includes(step.type)) return true;
+    const v = answers[step.id];
+    if (step.type === "multi") return Array.isArray(v) && v.length > 0;
+    if (step.type === "likert") return v && LIKERT_ITEMS.every(([k]) => !!v[k]);
+    if (step.type === "text") return typeof v === "string" && v.trim().length > 0;
+    return v !== undefined && v !== null && v !== "";
+  }
+
+  function resetBranchIfNeeded(newValue){
+    if (answers.compro !== newValue){
+      [...BRANCH_YES, ...BRANCH_NO].forEach(q => delete answers[q.id]);
+    }
+  }
+
+  function goNext(){
+    const flow = getFlow();
+    if (!isAnswered(flow[idx])) return;
+    if (idx < flow.length - 1) idx++;
+    render();
+    window.scrollTo({top:0, behavior:"smooth"});
+  }
+  function goBack(){
+    if (idx > 0) idx--;
+    render();
+    window.scrollTo({top:0, behavior:"smooth"});
+  }
+
+  function esc(s){
+    return String(s).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+  }
+
+  function progressPct(){
+    const flow = getFlow();
+    const qPos = flow.slice(0, idx).filter(s => !NON_QUESTION_TYPES.includes(s.type)).length;
+    return Math.min(100, Math.round((qPos / TOTAL_QUESTIONS) * 100));
+  }
+  function questionNumber(){
+    const flow = getFlow();
+    return flow.slice(0, idx + 1).filter(s => !NON_QUESTION_TYPES.includes(s.type)).length;
+  }
+
+  function render(){
+    const step = currentStep();
+    const app = document.getElementById("app");
+    const showProgress = !NON_QUESTION_TYPES.includes(step.type);
+
+    if (step.type === "ganador" && !surveySubmitted){
+      surveySubmitted = true;
+      submitSurvey();
+    }
+
+    app.innerHTML = `
+      <div class="brand">
+        <div class="brand-mark"><img class="mark-icon" src="${LOGO_ICON}" alt="IMPULSA" /><span class="word">IMPULSA</span></div>
+        <div class="brand-tag">Encuesta de decisión de compra</div>
+      </div>
+      ${showProgress ? `
+      <div class="progress-wrap">
+        <div class="progress-track"><div class="progress-fill" style="width:${progressPct()}%"></div></div>
+        <div class="progress-label"><span>Pregunta ${questionNumber()} de ${TOTAL_QUESTIONS}</span><span>${progressPct()}%</span></div>
+      </div>` : ""}
+      <div class="stage"><div class="card" id="card"></div></div>
+    `;
+
+    const card = document.getElementById("card");
+    if (step.type === "intro") card.innerHTML = renderIntro();
+    else if (step.type === "done") card.innerHTML = renderDone();
+    else if (step.type === "ganador") card.innerHTML = renderGanador();
+    else if (step.type === "ruleta") card.innerHTML = renderRuleta();
+    else card.innerHTML = renderQuestion(step);
+
+    attachHandlers(step);
+  }
+
+  function renderIntro(){
+    return `
+      <div class="eyebrow">Bienvenido(a)</div>
+      <h1 class="intro-title">Su opinión construye el próximo proyecto de IMPULSA</h1>
+      <p class="intro-body">Agradecemos su disposición para participar en esta encuesta. Nos permitirá comprender mejor los factores que influyen en la decisión de compra de un apartamento.</p>
+      <p class="intro-body">Todas sus respuestas serán tratadas de forma confidencial y se usarán únicamente con fines de análisis interno.</p>
+      <div class="intro-meta">
+        <div class="meta-chip">⏱ ~10 minutos</div>
+        <div class="meta-chip">🔒 Respuestas confidenciales</div>
+        <div class="meta-chip">📋 ${TOTAL_QUESTIONS} preguntas</div>
+      </div>
+      <div class="nav-row" style="justify-content:flex-end;">
+        <button class="btn btn-primary gold" id="btn-start">Comenzar encuesta</button>
+      </div>
+    `;
+  }
+
+  function renderDone(){
+    return `
+      <div class="done-wrap">
+        <div class="done-icon">
+          <svg width="30" height="30" viewBox="0 0 24 24" fill="none"><path d="M4 12.5L9.5 18L20 6" stroke="#ba8847" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </div>
+        <h2 class="intro-title" style="font-size:1.6rem;">¡Gracias por su tiempo!</h2>
+        <p class="intro-body">Sus respuestas fueron registradas. Esta información ayuda a IMPULSA a diseñar mejores proyectos para las familias de Guatemala.</p>
+        <p class="helper" id="submit-status" style="margin-top:18px;"></p>
+      </div>
+    `;
+  }
+
+  function renderGanador(){
+    return `
+      <div class="eyebrow">¡Ya casi termina!</div>
+      <h2 class="q-title">Antes de girar la ruleta de premios</h2>
+      <p class="q-sub">Déjenos sus datos de contacto para avisarle si resulta ganador(a).</p>
+      <div class="field-group">
+        <label class="field-label" for="input-nombre">Nombre completo</label>
+        <input type="text" id="input-nombre" class="field-input" placeholder="Su nombre completo" value="${esc(gState.nombre)}" autocomplete="name">
+      </div>
+      <div class="field-group">
+        <label class="field-label" for="input-correo">Correo electrónico</label>
+        <input type="email" id="input-correo" class="field-input" placeholder="su@correo.com" value="${esc(gState.correo)}" autocomplete="email">
+      </div>
+      <p class="helper warn" id="ganador-error" style="min-height:1em;"></p>
+      <div class="nav-row" style="justify-content:flex-end;">
+        <button class="btn btn-primary gold" id="btn-ganador-continuar">Girar la ruleta 🎡</button>
+      </div>
+    `;
+  }
+
+  function wheelGradient(){
+    const n = WHEEL_SEGMENTS.length;
+    const step = 360 / n;
+    const stops = WHEEL_SEGMENTS.map((seg, i) => `${seg.color} ${i*step}deg ${(i+1)*step}deg`);
+    return `conic-gradient(${stops.join(",")})`;
+  }
+
+  function wheelLabels(){
+    const n = WHEEL_SEGMENTS.length;
+    const step = 360 / n;
+    return WHEEL_SEGMENTS.map((seg, i) => {
+      const segCenter = step * i + step/2;
+      const angle = segCenter - 90;
+      const txt = seg.text || "#fff";
+      const shadow = txt === "#fff"
+        ? "text-shadow:0 1px 2px rgba(0,0,0,.35);"
+        : "text-shadow:0 1px 1px rgba(255,255,255,.55);";
+      return `<div class="wheel-label" style="transform:rotate(${angle}deg);"><span style="color:${txt};${shadow}">${esc(seg.short || seg.label)}</span></div>`;
+    }).join("");
+  }
+
+  // Calcula la rotación final (en grados) para que el puntero (fijo arriba,
+  // en 0°) quede apuntando al centro del segmento del premio ganador.
+  function rotationForResult(resultKey){
+    const n = WHEEL_SEGMENTS.length;
+    const step = 360 / n;
+    const matches = [];
+    WHEEL_SEGMENTS.forEach((s, i) => { if (s.key === resultKey) matches.push(i); });
+    let segIndex = matches.length
+      ? matches[Math.floor(Math.random() * matches.length)]
+      : n - 1;
+    const segCenter = step * segIndex + step/2;
+    const extraSpins = 5;
+    return extraSpins * 360 + (360 - segCenter);
+  }
+
+  function renderRuleta(){
+    const rotationStyle = gState.phase === "listo" ? "rotate(0deg)" : `rotate(${gState.rotation}deg)`;
+    const wheelHtml = `
+      <div class="wheel-wrap">
+        <div class="wheel-pointer"></div>
+        <div class="wheel" id="wheel" style="background:${wheelGradient()}; transform:${rotationStyle};">
+          ${wheelLabels()}
+        </div>
+        <div class="wheel-center">🎁</div>
+      </div>
+    `;
+
+    if (gState.phase === "resultado"){
+      const won = gState.result && gState.result !== SIN_PREMIO_KEY;
+      const prize = PRIZES.find(p => p.key === gState.result);
+      const resultBlock = won
+        ? `
+          <div class="wheel-result">
+            <div class="q-sub" style="margin:0;">¡Felicidades, ${esc(gState.nombre.split(" ")[0] || "")}!</div>
+            <div class="prize-name">${esc(prize ? prize.label : gState.result)}</div>
+            <p class="helper" style="margin-top:2px;">Un asesor de IMPULSA se comunicará con usted para hacerle entrega de su premio.</p>
+          </div>
+          <div class="field-group" style="margin-top:16px;">
+            <label class="field-label" for="input-telefono">Número de celular para coordinar la entrega</label>
+            <input type="tel" id="input-telefono" class="field-input" placeholder="Ej. 5555-5555" value="${esc(gState.telefono||"")}" ${gState.telefonoGuardado ? "disabled" : ""}>
+          </div>
+          <p class="helper warn" id="telefono-error" style="min-height:1em;"></p>
+          <div class="nav-row" style="justify-content:flex-end;">
+            <button class="btn btn-primary gold" id="btn-finalizar">${gState.telefonoGuardado ? "Continuar" : "Guardar y finalizar"}</button>
+          </div>
+        `
+        : `
+          <div class="wheel-result no-prize">
+            <div class="prize-name">¡Gracias por participar!</div>
+            <p class="helper" style="margin-top:2px;">Esta vez no salió premio — ¡mejor suerte la próxima!</p>
+          </div>
+          <div class="nav-row" style="justify-content:flex-end;">
+            <button class="btn btn-primary gold" id="btn-finalizar">Finalizar</button>
+          </div>
+        `;
+      return `
+        <div class="eyebrow">Ruleta de premios</div>
+        <div class="wheel-stage">${wheelHtml}</div>
+        ${resultBlock}
+      `;
+    }
+
+    return `
+      <div class="eyebrow">Ruleta de premios</div>
+      <h2 class="q-title" style="text-align:center;">${gState.phase === "girando" ? "Girando..." : "¡Gire la ruleta y participe por un premio!"}</h2>
+      <div class="wheel-stage">${wheelHtml}</div>
+      <div class="nav-row" style="justify-content:center;">
+        <button class="btn btn-primary gold" id="btn-girar" ${gState.phase === "girando" ? "disabled" : ""}>${gState.phase === "girando" ? "Girando..." : "Girar 🎡"}</button>
+      </div>
+    `;
+  }
+
+  function renderQuestion(step){
+    const num = questionNumber();
+    let body = "";
+    if (step.type === "single") body = renderOptions(step, false);
+    else if (step.type === "multi") body = renderOptions(step, true);
+    else if (step.type === "select") body = renderSelect(step);
+    else if (step.type === "text") body = renderText(step);
+    else if (step.type === "likert") body = renderLikert(step);
+
+    const flow = getFlow();
+    const atStart = idx === 0;
+    const answered = isAnswered(step);
+    // "Última pregunta" = la siguiente parada del flujo ya no es una
+    // pregunta (es la pantalla de "ganador"). Esto maneja automáticamente
+    // la ramificación de "compro", que siempre va seguida de más preguntas.
+    const nextType = flow[idx+1] ? flow[idx+1].type : null;
+    const isLast = !["single","multi","select","text","likert"].includes(nextType);
+
+    return `
+      <div class="eyebrow">Sección ${num <= 8 ? "general" : (answers.compro === "Sí" ? "compradores" : "prospectos")}</div>
+      <h2 class="q-title">${esc(step.title)}</h2>
+      ${step.sub ? `<p class="q-sub">${esc(step.sub)}</p>` : ""}
+      ${body}
+      <div class="nav-row">
+        <button class="btn btn-ghost" id="btn-back" ${atStart ? "disabled" : ""}>Anterior</button>
+        <button class="btn btn-primary gold" id="btn-next" ${answered ? "" : "disabled"}>
+          ${isLast ? "Finalizar" : "Siguiente"}
+        </button>
+      </div>
+    `;
+  }
+
+  function renderOptions(step, multi){
+    const val = answers[step.id];
+    const selectedSet = multi ? new Set(val || []) : null;
+    const maxNote = multi && step.max ? `<p class="helper ${ (val||[]).length >= step.max ? 'warn' : ''}">Seleccionadas: ${(val||[]).length} / ${step.max}</p>` : "";
+    return `
+      <div class="options" data-role="options" data-multi="${multi}" data-max="${step.max||""}">
+        ${step.options.map((opt,i) => {
+          const isSel = multi ? selectedSet.has(opt) : val === opt;
+          return `<button type="button" class="opt ${multi?"multi":""} ${isSel?"selected":""}" data-opt="${esc(opt)}" role="${multi?"checkbox":"radio"}" aria-checked="${isSel}">
+            <span class="mark"></span><span class="opt-label">${esc(opt)}</span>
+          </button>`;
+        }).join("")}
+      </div>
+      ${maxNote}
+    `;
+  }
+
+  function renderSelect(step){
+    const val = answers[step.id] || "";
+    return `
+      <div class="search-wrap" data-role="select" data-field="${step.id}">
+        <input type="text" class="search-input" id="search-input" placeholder="${val ? esc(val) : "Escriba o seleccione una zona..."}" autocomplete="off" value="${val ? esc(val) : ""}">
+        <div class="search-list" id="search-list"></div>
+      </div>
+    `;
+  }
+
+  function renderText(step){
+    const val = answers[step.id] || "";
+    return `<textarea class="text-input" id="text-input" placeholder="Escriba su respuesta...">${esc(val)}</textarea>`;
+  }
+
+  function renderLikert(step){
+    const val = answers[step.id] || {};
+    return `
+      <div class="likert-legend"><span>${step.scale[0]}</span><span>${step.scale[3]}</span></div>
+      <div class="likert-table" data-role="likert">
+        ${LIKERT_ITEMS.map(([key,label]) => `
+          <div class="likert-row">
+            <div class="likert-item">${esc(label)}</div>
+            <div class="likert-scale">
+              ${step.scale.map(s => `
+                <button type="button" class="likert-opt ${val[key]===s?"selected":""}" data-key="${key}" data-val="${esc(s)}">${esc(s)}</button>
+              `).join("")}
+            </div>
+          </div>
+        `).join("")}
+      </div>
+    `;
+  }
+
+  function attachHandlers(step){
+    const startBtn = document.getElementById("btn-start");
+    if (startBtn) startBtn.onclick = goNext;
+
+    const backBtn = document.getElementById("btn-back");
+    const nextBtn = document.getElementById("btn-next");
+    if (backBtn) backBtn.onclick = goBack;
+    if (nextBtn) nextBtn.onclick = goNext;
+
+    if (step.type === "single" || step.type === "multi"){
+      document.querySelectorAll(".opt").forEach(btn => {
+        btn.addEventListener("click", () => {
+          const opt = btn.getAttribute("data-opt");
+          if (step.type === "single"){
+            if (step.id === "compro") resetBranchIfNeeded(opt);
+            answers[step.id] = opt;
+          } else {
+            const cur = new Set(answers[step.id] || []);
+            if (cur.has(opt)) cur.delete(opt);
+            else {
+              if (step.max && cur.size >= step.max) return;
+              cur.add(opt);
+            }
+            answers[step.id] = Array.from(cur);
+          }
+          render();
+        });
+      });
+    }
+
+    if (step.type === "select"){
+      const input = document.getElementById("search-input");
+      const list = document.getElementById("search-list");
+      function draw(filter){
+        const f = (filter||"").toLowerCase();
+        const matches = step.options.filter(o => o.toLowerCase().includes(f)).slice(0,25);
+        list.innerHTML = matches.map(o => `<button type="button" class="search-item ${answers[step.id]===o?'active':''}" data-opt="${esc(o)}">${esc(o)}</button>`).join("") || `<div class="search-item">Sin resultados</div>`;
+        list.querySelectorAll(".search-item[data-opt]").forEach(b => {
+          b.onclick = () => {
+            answers[step.id] = b.getAttribute("data-opt");
+            render();
+          };
+        });
+      }
+      draw("");
+      input.addEventListener("input", () => draw(input.value));
+      input.addEventListener("focus", () => draw(input.value));
+    }
+
+    if (step.type === "text"){
+      const ta = document.getElementById("text-input");
+      ta.addEventListener("input", () => {
+        answers[step.id] = ta.value;
+        const nb = document.getElementById("btn-next");
+        if (nb) nb.disabled = !isAnswered(step);
+      });
+    }
+
+    if (step.type === "likert"){
+      document.querySelectorAll(".likert-opt").forEach(btn => {
+        btn.addEventListener("click", () => {
+          const key = btn.getAttribute("data-key");
+          const val = btn.getAttribute("data-val");
+          answers[step.id] = Object.assign({}, answers[step.id], { [key]: val });
+          render();
+        });
+      });
+    }
+
+    if (step.type === "ganador"){
+      const btn = document.getElementById("btn-ganador-continuar");
+      const errEl = document.getElementById("ganador-error");
+      btn.onclick = () => {
+        const nombre = document.getElementById("input-nombre").value.trim();
+        const correo = document.getElementById("input-correo").value.trim();
+        const correoOk = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(correo);
+        if (!nombre || !correoOk){
+          errEl.textContent = "Por favor ingrese su nombre y un correo electrónico válido.";
+          return;
+        }
+        gState.nombre = nombre;
+        gState.correo = correo;
+        goNext();
+      };
+    }
+
+    if (step.type === "ruleta"){
+      const girarBtn = document.getElementById("btn-girar");
+      if (girarBtn) girarBtn.onclick = spinRuleta;
+
+      const finBtn = document.getElementById("btn-finalizar");
+      if (finBtn) finBtn.onclick = () => {
+        if (gState.result && gState.result !== SIN_PREMIO_KEY && !gState.telefonoGuardado){
+          const telInput = document.getElementById("input-telefono");
+          const tel = telInput ? telInput.value.trim() : "";
+          const errEl = document.getElementById("telefono-error");
+          if (!tel){
+            if (errEl) errEl.textContent = "Por favor ingrese un número de celular para poder entregarle su premio.";
+            return;
+          }
+          gState.telefono = tel;
+          guardarTelefono(tel);
+        }
+        goNext();
+      };
+    }
+  }
+
+  async function spinRuleta(){
+    gState.phase = "girando";
+    render();
+
+    let resultKey = SIN_PREMIO_KEY;
+    let ganadorId = null;
+    try {
+      if (CONFIG.RULETA_URL){
+        const res = await fetch(CONFIG.RULETA_URL, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ nombre: gState.nombre, correo: gState.correo, enviado_en: new Date().toISOString() })
+        });
+        const data = await res.json();
+        if (data && data.premio) resultKey = data.premio;
+        if (data && data.ganadorId != null) ganadorId = data.ganadorId;
+      }
+    } catch(e){
+      resultKey = SIN_PREMIO_KEY;
+    }
+
+    gState.result = resultKey;
+    gState.ganadorId = ganadorId;
+    gState.rotation = rotationForResult(resultKey);
+
+    const wheelEl = document.getElementById("wheel");
+    if (wheelEl) wheelEl.style.transform = `rotate(${gState.rotation}deg)`;
+
+    setTimeout(() => {
+      gState.phase = "resultado";
+      render();
+    }, 4300);
+  }
+
+  async function guardarTelefono(telefono){
+    gState.telefonoGuardado = true;
+    if (!CONFIG.TELEFONO_URL || gState.ganadorId == null) return;
+    try {
+      await fetch(CONFIG.TELEFONO_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: gState.ganadorId, telefono })
+      });
+    } catch(e){ /* el número queda respaldado en el estado local aunque falle el envío */ }
+  }
+
+  async function submitSurvey(){
+    const payload = {
+      encuesta: "Decisión de compra IMPULSA",
+      enviado_en: new Date().toISOString(),
+      respuestas: answers
+    };
+    const statusEl = document.getElementById("submit-status");
+    try {
+      const arr = JSON.parse(localStorage.getItem("impulsa_encuesta_respuestas") || "[]");
+      arr.push(payload);
+      localStorage.setItem("impulsa_encuesta_respuestas", JSON.stringify(arr));
+    } catch(e){ /* almacenamiento no disponible, se ignora */ }
+
+    if (!CONFIG.SUBMIT_URL){
+      if (statusEl) statusEl.textContent = "";
+      return;
+    }
+    try {
+      await fetch(CONFIG.SUBMIT_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+      });
+      if (statusEl) statusEl.textContent = "";
+    } catch(e){
+      if (statusEl) statusEl.textContent = "No se pudo confirmar el envío en línea; sus respuestas quedaron respaldadas en este dispositivo.";
+    }
+  }
+
+  function renderAdmin(){
+    document.body.innerHTML = "";
+    const wrap = document.createElement("div");
+    wrap.className = "admin-panel";
+    let rows = [];
+    try { rows = JSON.parse(localStorage.getItem("impulsa_encuesta_respuestas") || "[]"); } catch(e){}
+    const allKeys = new Set();
+    rows.forEach(r => Object.keys(r.respuestas||{}).forEach(k => allKeys.add(k)));
+    const keys = Array.from(allKeys);
+    wrap.innerHTML = `
+      <h2>Respuestas guardadas en este navegador (${rows.length})</h2>
+      <p class="helper">Esto solo muestra respuestas enviadas desde este mismo dispositivo/navegador. Para centralizar todas las respuestas de los encuestados, configure CONFIG.SUBMIT_URL en el archivo.</p>
+      <button class="btn btn-primary gold" id="dl-csv" style="margin:12px 0;">Descargar CSV</button>
+      <div style="overflow-x:auto;">
+      <table><thead><tr><th>Fecha</th>${keys.map(k=>`<th>${esc(k)}</th>`).join("")}</tr></thead>
+      <tbody>${rows.map(r => `<tr><td>${esc(r.enviado_en||"")}</td>${keys.map(k=>`<td>${esc(JSON.stringify((r.respuestas||{})[k] ?? ""))}</td>`).join("")}</tr>`).join("")}</tbody></table>
+      </div>
+    `;
+    document.body.appendChild(wrap);
+    document.getElementById("dl-csv").onclick = async () => {
+      const header = ["enviado_en", ...keys];
+      const lines = [header.join(",")];
+      rows.forEach(r => {
+        const line = [r.enviado_en||"", ...keys.map(k => `"${String((r.respuestas||{})[k] ?? "").replace(/"/g,'""')}"`)];
+        lines.push(line.join(","));
+      });
+      const csv = lines.join("\n");
+      const dl = await (window.claude && window.claude.use ? window.claude.use("downloads") : Promise.resolve(null));
+      if (dl){
+        try {
+          await dl.save({ filename: "respuestas_encuesta_impulsa.csv", data: csv });
+        } catch(e){ /* viewer declined or unavailable */ }
+      } else {
+        // Fuera del visor de Artifacts (ej. archivo abierto localmente): usa el enlace de descarga normal.
+        const blob = new Blob([csv], { type:"text/csv;charset=utf-8;" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url; a.download = "respuestas_encuesta_impulsa.csv"; a.click();
+        URL.revokeObjectURL(url);
+      }
+    };
+  }
+
+  if (window.location.hash === "#admin-impulsa") renderAdmin();
+  else render();
+})();
+</script>
