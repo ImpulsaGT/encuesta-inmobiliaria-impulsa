@@ -379,7 +379,7 @@
       options:["Q3,999 o menos","Q4,000 - Q5,999","Q6,000 - Q7,999","Q8,000 - Q9,999","Q10,000 - Q11,999",
         "Q12,000 - Q13,999","Q14,000 - Q15,999","Q16,000 o más"] },
     { id:"razon_busqueda", n:6, type:"single", title:"¿Cuál fue la razón principal por la que buscaba un apartamento?",
-      options:["Vivienda propia","Inversión","Segunda vivienda","Acercarse a su trabajo y/o actividades diarias"] },
+      options:["Vivienda propia","Inversión","Segunda vivienda","Acercarse a su trabajo y/o actividades diarias","Otras"], hasOther:true },
     { id:"zonas_buscadas", n:7, type:"multi", max:3, title:"¿En qué zonas buscó apartamento?",
       sub:"Selecciona máximo 3 opciones.", options: ZONES },
     { id:"compro", n:8, type:"single", title:"Tras la búsqueda de proyectos, ¿compró algún apartamento?",
@@ -416,6 +416,12 @@
   const TOTAL_QUESTIONS = COMMON.length + BRANCH_YES.length; // 15, same either branch
 
   let answers = {};
+  // Texto libre que la persona escribe cuando elige la opción "Otras" en
+  // alguna pregunta (id de la pregunta -> texto ingresado). Se guarda aparte
+  // de "answers" para no perder el resaltado del botón "Otras" mientras
+  // escribe; el texto real se combina con "Otras: " solo al enviar/guardar
+  // la respuesta final (ver finalAnswers()).
+  let otherTexts = {};
   let idx = 0; // 0 = intro, 1..8 = COMMON, 9..15 = branch, 16 = ganador, 17 = ruleta, 18 = done
   let surveySubmitted = false;
   const NON_QUESTION_TYPES = ["intro","done","ganador","ruleta"];
@@ -445,10 +451,16 @@
   function isAnswered(step){
     if (!step || NON_QUESTION_TYPES.includes(step.type)) return true;
     const v = answers[step.id];
-    if (step.type === "multi") return Array.isArray(v) && v.length > 0;
+    if (step.type === "multi"){
+      if (!Array.isArray(v) || v.length === 0) return false;
+      if (step.hasOther && v.includes("Otras") && !(otherTexts[step.id]||"").trim()) return false;
+      return true;
+    }
     if (step.type === "likert") return v && LIKERT_ITEMS.every(([k]) => !!v[k]);
     if (step.type === "text") return typeof v === "string" && v.trim().length > 0;
-    return v !== undefined && v !== null && v !== "";
+    if (v === undefined || v === null || v === "") return false;
+    if (step.hasOther && v === "Otras" && !(otherTexts[step.id]||"").trim()) return false;
+    return true;
   }
 
   function resetBranchIfNeeded(newValue){
@@ -710,6 +722,13 @@
     const val = answers[step.id];
     const selectedSet = multi ? new Set(val || []) : null;
     const maxNote = multi && step.max ? `<p class="helper ${ (val||[]).length >= step.max ? 'warn' : ''}">Seleccionadas: ${(val||[]).length} / ${step.max}</p>` : "";
+    const otraSeleccionada = step.hasOther && (multi ? selectedSet.has("Otras") : val === "Otras");
+    const otroInput = otraSeleccionada ? `
+      <div class="field-group" style="margin-top:12px;">
+        <label class="field-label" for="input-otro">Por favor especifique</label>
+        <input type="text" class="field-input" id="input-otro" placeholder="Escriba aquí su respuesta..." autocomplete="off" value="${esc(otherTexts[step.id] || "")}">
+      </div>
+    ` : "";
     return `
       <div class="options" data-role="options" data-multi="${multi}" data-max="${step.max||""}">
         ${step.options.map((opt,i) => {
@@ -720,6 +739,7 @@
         }).join("")}
       </div>
       ${maxNote}
+      ${otroInput}
     `;
   }
 
@@ -785,6 +805,19 @@
           render();
         });
       });
+
+      if (step.hasOther){
+        const otroInput = document.getElementById("input-otro");
+        const nextBtn2 = document.getElementById("btn-next");
+        if (otroInput){
+          otroInput.focus();
+          otroInput.selectionStart = otroInput.selectionEnd = otroInput.value.length;
+          otroInput.addEventListener("input", () => {
+            otherTexts[step.id] = otroInput.value;
+            if (nextBtn2) nextBtn2.disabled = !isAnswered(step);
+          });
+        }
+      }
     }
 
     if (step.type === "select"){
@@ -919,11 +952,32 @@
     } catch(e){ /* el número queda respaldado en el estado local aunque falle el envío */ }
   }
 
+  // Combina "answers" (que para las preguntas con "Otras" solo guarda la
+  // palabra "Otras", para que el botón se vea seleccionado) con el texto
+  // libre que la persona escribió, de modo que lo que se envía/guarda sea
+  // el texto real ("Otras: <lo que escribió>") y no solo la palabra "Otras".
+  function finalAnswers(){
+    const out = Object.assign({}, answers);
+    [...COMMON, ...BRANCH_YES, ...BRANCH_NO].forEach(step => {
+      if (!step.hasOther) return;
+      const v = answers[step.id];
+      const texto = (otherTexts[step.id] || "").trim();
+      if (step.type === "multi"){
+        if (Array.isArray(v) && v.includes("Otras")){
+          out[step.id] = v.map(o => o === "Otras" ? `Otras: ${texto}` : o);
+        }
+      } else if (v === "Otras"){
+        out[step.id] = `Otras: ${texto}`;
+      }
+    });
+    return out;
+  }
+
   async function submitSurvey(){
     const payload = {
       encuesta: "Decisión de compra IMPULSA",
       enviado_en: new Date().toISOString(),
-      respuestas: answers
+      respuestas: finalAnswers()
     };
     const statusEl = document.getElementById("submit-status");
     try {
