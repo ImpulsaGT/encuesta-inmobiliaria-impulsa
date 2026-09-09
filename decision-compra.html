@@ -615,6 +615,20 @@
       </div>
     `;
 
+    if (gState.phase === "yaParticipo"){
+      return `
+        <div class="eyebrow">Ruleta de premios</div>
+        <div class="wheel-stage">${wheelHtml}</div>
+        <div class="wheel-result no-prize">
+          <div class="prize-name">Ya has participado</div>
+          <p class="helper" style="margin-top:2px;">Este correo o nombre ya participó en la ruleta. Solo se permite una participación por persona.</p>
+        </div>
+        <div class="nav-row" style="justify-content:flex-end;">
+          <button class="btn btn-primary gold" id="btn-finalizar">Finalizar</button>
+        </div>
+      `;
+    }
+
     if (gState.phase === "resultado"){
       const won = gState.result && gState.result !== SIN_PREMIO_KEY;
       const prize = PRIZES.find(p => p.key === gState.result);
@@ -857,6 +871,7 @@
 
     let resultKey = SIN_PREMIO_KEY;
     let ganadorId = null;
+    let yaParticipo = false;
     try {
       if (CONFIG.RULETA_URL){
         const res = await fetch(CONFIG.RULETA_URL, {
@@ -865,11 +880,18 @@
           body: JSON.stringify({ nombre: gState.nombre, correo: gState.correo, enviado_en: new Date().toISOString() })
         });
         const data = await res.json();
+        if (data && data.yaParticipo === true) yaParticipo = true;
         if (data && data.premio) resultKey = data.premio;
         if (data && data.ganadorId != null) ganadorId = data.ganadorId;
       }
     } catch(e){
       resultKey = SIN_PREMIO_KEY;
+    }
+
+    if (yaParticipo){
+      gState.phase = "yaParticipo";
+      render();
+      return;
     }
 
     gState.result = resultKey;
