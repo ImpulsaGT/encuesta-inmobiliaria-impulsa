@@ -453,6 +453,12 @@
   let otherTexts = {};
   let idx = 0; // 0 = intro, 1..8 = COMMON, 9 = note, 10..37 = DUAL, 38 = ganador, 39 = ruleta, 40 = done
   let surveySubmitted = false;
+  let surveyStartedAt = null; // hora en que la persona presiona "Comenzar encuesta"
+  function formatDuracion(seg){
+    const h = Math.floor(seg/3600), m = Math.floor((seg%3600)/60), x = seg%60;
+    const p = n => String(n).padStart(2,"0");
+    return h > 0 ? `${h}:${p(m)}:${p(x)}` : `${p(m)}:${p(x)}`;
+  }
   const NON_QUESTION_TYPES = ["intro","done","note","ganador","ruleta"];
 
   // Estado de los datos de contacto y de la ruleta (no forman parte de las
@@ -813,7 +819,7 @@
 
   function attachHandlers(step){
     const startBtn = document.getElementById("btn-start");
-    if (startBtn) startBtn.onclick = goNext;
+    if (startBtn) startBtn.onclick = () => { if (!surveyStartedAt && currentStep().type === "intro") surveyStartedAt = new Date(); goNext(); };
 
     const backBtn = document.getElementById("btn-back");
     const nextBtn = document.getElementById("btn-next");
@@ -1008,9 +1014,15 @@
   }
 
   async function submitSurvey(){
+    const finAt = new Date();
+    const inicioAt = surveyStartedAt || finAt;
+    const duracionSeg = Math.max(0, Math.round((finAt - inicioAt) / 1000));
     const payload = {
       encuesta: "Encuesta inmobiliaria IMPULSA",
-      enviado_en: new Date().toISOString(),
+      enviado_en: finAt.toISOString(),
+      inicio_en: inicioAt.toISOString(),
+      duracion_segundos: duracionSeg,
+      duracion: formatDuracion(duracionSeg),
       respuestas: finalAnswers()
     };
     const statusEl = document.getElementById("submit-status");
